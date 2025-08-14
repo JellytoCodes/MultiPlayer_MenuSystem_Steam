@@ -4,6 +4,7 @@ DerivedDataCache/
 Intermediate/
 Saved/
 Windows/
+Build/
 
 # Visual Studio 관련
 .vs/
