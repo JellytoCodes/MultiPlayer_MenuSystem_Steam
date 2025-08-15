@@ -7,9 +7,10 @@
 #include "Components/Button.h"
 #include "Engine/Engine.h"
 
-void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch, FString LobbyPath)
+void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch, FString LobbyPath, FString GamePath)
 {
 	PathToLobby = FString::Printf(TEXT("%s?listen"), *LobbyPath);
+	PathToGame = FString::Printf(TEXT("%s?listen"), *GamePath);
 	NumPublicConnections = NumberOfPublicConnections;
 	MatchType = TypeOfMatch;
 	
@@ -30,7 +31,7 @@ void UMenu::MenuSetup(int32 NumberOfPublicConnections, FString TypeOfMatch, FStr
 		}
 	}
 
-	if (UGameInstance* GameInstance = GetGameInstance())
+	if (const UGameInstance* GameInstance = GetGameInstance())
 	{
 		MultiplayerSessionsSubsystem = GameInstance->GetSubsystem<UMultiplayerSessionsSubsystem>();
 	}
@@ -51,7 +52,7 @@ bool UMenu::Initialize()
 
 	if (HostButton) HostButton->OnClicked.AddDynamic(this, &ThisClass::HostButtonClicked);
 	if (JoinButton) JoinButton->OnClicked.AddDynamic(this, &ThisClass::JoinButtonClicked);
-
+	if (StartButton) StartButton->OnClicked.AddDynamic(this, &ThisClass::StartButtonClicked);
 	return true;
 }
 
@@ -126,7 +127,17 @@ void UMenu::OnDestroySession(bool bWasSuccessful)
 
 void UMenu::OnStartSession(bool bWasSuccessful)
 {
-	
+	if (bWasSuccessful)
+	{
+		if (UWorld* World = GetWorld())
+		{
+			World->ServerTravel(PathToGame);
+		}
+	}
+	else
+	{
+		StartButton->SetIsEnabled(true);
+	}
 }
 
 void UMenu::HostButtonClicked()
@@ -144,6 +155,15 @@ void UMenu::JoinButtonClicked()
 	if (MultiplayerSessionsSubsystem)
 	{
 		MultiplayerSessionsSubsystem->FindSessions(10000);
+	}
+}
+
+void UMenu::StartButtonClicked()
+{
+	StartButton->SetIsEnabled(false);
+	if (MultiplayerSessionsSubsystem)
+	{
+		MultiplayerSessionsSubsystem->StartSession();
 	}
 }
 
